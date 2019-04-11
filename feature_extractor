@@ -1,0 +1,50 @@
+import numpy as np
+import cv2
+import os
+import pandas as pd
+
+
+def image_to_vec(image, size = (32, 32)):
+    do_this = cv2.resize(image, size).flatten()
+    return do_this
+##output should be 32, 32, 3 (the last one being the rbg)
+
+def extract_color_histogram(image, bins=(8, 8, 8)):
+    # extract a 3D color histogram from the HSV color space using
+    # the supplied number of `bins` per channel
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    hist = cv2.calcHist([hsv], [0, 1, 2], None, bins, [0, 180, 0, 256, 0, 256])
+    #normalize hist
+    hist = cv2.normalize(hist, hist)
+    # return the flattened histogram as the feature vector
+    return hist.flatten()
+
+image = cv2.imread(f"./PetImages/Cat/1.jpg")
+feature = image_to_vec(image)
+hist = extract_color_histogram(image)
+
+print(f"feature {(feature) }")
+
+pixels = []
+colour = []
+labels = []
+k = 0
+
+"""
+for i in os.listdir("./PetImages/Cat"):
+    image = cv2.imread(f"./PetImages/Cat/{i}")
+
+    feature = image_to_vec(image)
+    hist = extract_color_histogram(image)
+
+    labels.append(0)
+    pixels.append(feature)
+    colour.append(hist)
+
+    data = {"pixel": [feature], "colour": [hist], "label": [0]}
+    df = pd.DataFrame(data)
+
+    with open("test_knn.csv", "a") as f:
+        df.to_csv('test_knn.csv', mode="a", index=False, header=f.tell()==0)
+
+"""
