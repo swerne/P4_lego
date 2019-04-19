@@ -1,0 +1,149 @@
+"""
+KNN is a algorithm that stores all the available cases and classifies the new data or case based on a similarity measure
+
+"if you're similar to your neighbours, then you're the same"
+
+k = nearest neighbours.
+
+k value = 5 - 10% of total number of entries.
+Euclidian distance = sqrt( (X_2 - X_1)**2 + (4-1)**2 )
+
+K searches for the nearest euclidian distances. (New point - Existing points)
+
+"""
+
+
+#X = feautures (Størelse, Farve, etc)
+#y = classification (Type af lego)
+
+#importer data
+import numpy as np
+import cv2
+import os
+import pandas as pd
+
+
+def image_to_vec(image, size = (32, 32)):
+    do_this = cv2.resize(image, size).flatten()
+    return do_this
+##output should be 32, 32, 3 (the last one being the rbg)
+
+def extract_color_histogram(image, bins=(8, 8, 8)):
+    # extract a 3D color histogram from the HSV color space using
+    # the supplied number of `bins` per channel
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    hist = cv2.calcHist([hsv], [0, 1, 2], None, bins, [0, 180, 0, 256, 0, 256])
+    #normalize hist
+    hist = cv2.normalize(hist, hist)
+    # return the flattened histogram as the feature vector
+    return hist.flatten()
+
+pixels = []
+colour = []
+labels = []
+k = 0
+
+for folder in os.listdir("pics"):
+    #print(folder)
+    for pic in os.listdir(f"pics/{folder}"):
+        #print(pic)
+        for picture in os.listdir(f"pics/{folder}/{pic}"):
+            #print(picture)
+            image = cv2.imread(f"./pics/{folder}/{pic}/{picture}")
+            feature = image_to_vec(image)
+            hist = extract_color_histogram(image)
+
+
+            label = [folder + " " + pic]
+
+
+            data = {"pixel": [feature], "colour": [hist], "label": [label]}
+
+            colour.append(hist)
+            pixels.append(feature)
+            labels.append(label)
+            #print(len(feature), len(colour))
+            #df = pd.DataFrame(data)
+            #df.transpose()
+
+            #with open("test.csv", "a") as f:
+             #  df.to_csv('test.csv', mode="a", index=False, header=f.tell() == 0)
+            #print(len(feature))
+
+pixels_labels = []
+for k in range(len(labels)):
+    pixels_labels.append([pixels[k], labels[k]])
+
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
+
+feature = np.array(feature)
+hist = np.array(hist)
+labels = np.array(labels)
+
+(trainX, testX, trainy, testy) = train_test_split(
+	pixels, labels, test_size=0.25, random_state=42)
+
+model = KNeighborsClassifier(n_neighbors=1)
+model.fit(trainX, trainy.ravel())
+acc = model.score(testX, testy)
+
+print(acc)
+
+
+"""
+import math
+
+def euclidian_dist(point_1, point_2, length):
+    distance = 0
+    for x in range(length):
+        distance += np.square((point_1[x] - point_2[x]))
+
+    return np.sqrt(distance)
+
+
+import operator
+def K_neighbours(trainingset, input, k):
+    distances = {}
+    sort = {}
+    length = k
+    print(length)
+    print(len(trainingset) )
+    for x in range(len(trainingset)):
+        dist = euclidian_dist(input, trainingset[:1][x], length)
+        distances[x] = dist
+
+    sort = sorted(distances.items(), key=operator.itemgetter(1))
+    neighbours = []
+    #print(sort[1][0])
+    for x in range(k):
+        neighbours.append(sort[x][1])
+    print(f"neighbours {neighbours}")
+
+    class_votes = {}
+
+    for i in range(len(neighbours)):
+        print("check", trainingset, "class_votes", class_votes)
+        check = trainingset[i][-1]
+
+
+        if check in class_votes:
+            class_votes[check] += 1
+        else:
+            class_votes[check] = 1
+    #print(class_votes)
+    sort = sorted(class_votes.items(), key = operator.itemgetter(1), reverse = True)
+    #print(sort)
+
+    return (sort[0][0], neighbours)
+
+k = 3
+
+trainingset = pixels_labels
+test = pixels[1]
+training_label = labels
+
+neighbours = K_neighbours(trainingset, test, k)
+print(neighbours)
+
+"""
