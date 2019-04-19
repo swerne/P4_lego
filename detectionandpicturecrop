@@ -1,0 +1,52 @@
+import cv2
+import numpy as np
+import time
+
+
+cap = cv2.VideoCapture(0) 
+time.sleep(2)
+while(True):
+    
+    ret, frame = cap.read()
+    if not ret: 
+        print ("Nope")
+        break
+    
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    hue ,saturation ,value = cv2.split(hsv)
+    retval, thresholded = cv2.threshold(saturation, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    medianFiltered = cv2.medianBlur(thresholded,5)
+    _,cnts, hierarchy = cv2.findContours(medianFiltered, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contour_list =[]
+    for contour in cnts: 
+        area = cv2.contourArea(contour)
+        if 1000 < area < 2000 :
+            contour_list.append(contour)
+    
+    indx = 0
+    #first = cv2.drawContours(frame, contour_list, -1, (0, 255, 0), 2)
+    for c in contour_list:
+        indx += 1
+        # get the bounding rect
+        x, y, w, h = cv2.boundingRect(c)
+        # draw a green rectangle to visualize the bounding rect
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 1)    
+        #rect = cv2.minAreaRect(c)
+        #box = cv2.boxPoints(rect)
+        # convert all coordinates floating point values to int
+        #box = np.int0(box)
+        # draw a red 'nghien' rectangle
+        #cv2.drawContours(frame, [box], 0, (0, 0, 255))
+        roiColor = frame[y:y+h+1, x:x+w+1]
+        cv2.imwrite(str(indx) + '.jpg',roiColor)
+     
+    
+    cv2.imshow('Frame', frame)
+    cv2.imshow('threshold',thresholded)
+    cv2.imshow('blurred',medianFiltered)
+    if cv2.waitKey(33) == ord('a'):
+        break
+        
+cap.release()
+cv2.destroyAllWindows()
